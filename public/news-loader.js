@@ -338,14 +338,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="text-sm text-charcoal-muted">${article.source} • ${date}</span>
                     <span class="text-sm text-charcoal-muted">読了時間：${readingTime}分</span>
                 </div>
-                <div class="prose prose-lg max-w-none mb-8">
+                <div class="prose prose-lg max-w-none">
                     <p class="text-charcoal leading-relaxed text-lg">${article.description}</p>
                 </div>
-                <a href="${article.url}" target="_blank" rel="noopener noreferrer"
-                   class="inline-block px-6 py-3 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
-                    元記事を読む →
-                </a>
             `;
+
+            // ボトムアクションに元記事URLを設定して表示
+            const bottomActions = document.getElementById('bottom-actions');
+            const originalLink = document.getElementById('original-article-link');
+            if (originalLink) originalLink.href = article.url;
+            if (bottomActions) bottomActions.classList.remove('hidden');
 
             // AI要約と元記事の内容を非同期で取得
             const summarySection = document.getElementById('ai-summary-section');
