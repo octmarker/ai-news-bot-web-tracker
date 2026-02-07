@@ -68,7 +68,10 @@ class NewsLoader {
                 throw new Error(`Failed to fetch candidates: ${response.status}`);
             }
             const data = await response.json();
-            return atob(data.content);
+            const binary = atob(data.content);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return new TextDecoder('utf-8').decode(bytes);
         } catch (error) {
             console.error('Error fetching candidates:', error);
             throw error;
