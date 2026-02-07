@@ -1,8 +1,13 @@
 /**
  * Vercel Serverless Function - Fetch article content and generate AI summary
+ * With GitHub-based caching
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const GITHUB_TOKEN = () => process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = () => process.env.GITHUB_OWNER || 'octmarker';
+const GITHUB_REPO = () => process.env.GITHUB_REPO || 'ai-news-bot-web-tracker';
 
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,20 +18,34 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     try {
-        const { url, title } = req.body;
+        const { url, title, date, article_id } = req.body;
         if (!url) return res.status(400).json({ error: 'URL is required' });
 
-        // 1. 元記事のHTMLを取得
+        const cacheKey = date && article_id ? `${date}_${article_id}` : null;
+
+        // 1. キャッシュを確認
+        if (cacheKey) {
+            const cached = await loadCache(cacheKey);
+            if (cached) {
+                console.log('Cache hit:', cacheKey);
+                return res.status(200).json({ success: true, cached: true, ...cached });
+            }
+        }
+
+        // 2. 元記事のHTMLを取得
         const articleContent = await fetchArticleContent(url);
 
-        // 2. Gemini APIで要約生成
+        // 3. Gemini APIで要約生成
         const summary = await generateSummary(title, articleContent);
 
-        return res.status(200).json({
-            success: true,
-            article_text: articleContent,
-            ai_summary: summary
-        });
+        const result = { article_text: articleContent, ai_summary: summary };
+
+        // 4. キャッシュに保存（非同期、レスポンスはブロックしない）
+        if (cacheKey) {
+            saveCache(cacheKey, result).catch(err => console.error('Cache save error:', err));
+        }
+
+        return res.status(200).json({ success: true, cached: false, ...result });
 
     } catch (error) {
         console.error('Summarize error:', error);
@@ -34,6 +53,60 @@ export default async function handler(req, res) {
             error: 'Failed to summarize',
             message: error.message
         });
+    }
+}
+
+/**
+ * GitHubからキャッシュを読み込み
+ */
+async function loadCache(cacheKey) {
+    const path = `data/summaries/${cacheKey}.json`;
+    const url = `https://api.github.com/repos/${GITHUB_OWNER()}/${GITHUB_REPO()}/contents/${path}`;
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN()}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (response.status === 404) return null;
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        const content = Buffer.from(data.content, 'base64').toString('utf-8');
+        return JSON.parse(content);
+    } catch (error) {
+        console.error('Cache load error:', error.message);
+        return null;
+    }
+}
+
+/**
+ * GitHubにキャッシュを保存
+ */
+async function saveCache(cacheKey, data) {
+    const path = `data/summaries/${cacheKey}.json`;
+    const url = `https://api.github.com/repos/${GITHUB_OWNER()}/${GITHUB_REPO()}/contents/${path}`;
+    const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
+
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `token ${GITHUB_TOKEN()}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: `Cache summary: ${cacheKey}`,
+            content
+        })
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to save cache: ${error}`);
     }
 }
 
@@ -66,7 +139,6 @@ async function fetchArticleContent(url) {
  * HTMLからメインコンテンツを抽出
  */
 function extractMainContent(html) {
-    // scriptタグ、styleタグ、navタグなどを除去
     let text = html
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -75,21 +147,16 @@ function extractMainContent(html) {
         .replace(/<footer[\s\S]*?<\/footer>/gi, '')
         .replace(/<aside[\s\S]*?<\/aside>/gi, '');
 
-    // article タグの中身を優先
     const articleMatch = text.match(/<article[\s\S]*?>([\s\S]*?)<\/article>/i);
     if (articleMatch) {
         text = articleMatch[1];
     } else {
-        // main タグの中身
         const mainMatch = text.match(/<main[\s\S]*?>([\s\S]*?)<\/main>/i);
         if (mainMatch) text = mainMatch[1];
     }
 
-    // HTMLタグを除去
     text = text.replace(/<[^>]+>/g, ' ');
-    // 連続する空白・改行を整理
     text = text.replace(/\s+/g, ' ').trim();
-    // 最大5000文字に制限
     return text.substring(0, 5000);
 }
 
@@ -123,7 +190,6 @@ ${articleContent || '（本文の取得に失敗しました。タイトルか�
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    // JSONを抽出
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('Failed to parse AI response');
 

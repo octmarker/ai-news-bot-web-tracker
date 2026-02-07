@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const resp = await fetch(`${apiBase}/api/summarize`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: article.url, title: article.title })
+                        body: JSON.stringify({ url: article.url, title: article.title, date, article_id: articleId })
                     });
                     const data = await resp.json();
 
