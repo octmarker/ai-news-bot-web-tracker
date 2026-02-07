@@ -10,14 +10,21 @@ class NewsLoader {
             '政治・政策': { label: '政治', color: 'bg-primary/80' },
             '科学': { label: '科学', color: 'bg-primary/80' }
         };
-        this.trackingEnabled = true; // クリック追跡を有効化
+        this.trackingEnabled = true;
+        this.trackedKeys = new Set(JSON.parse(localStorage.getItem('trackedClicks') || '[]'));
     }
 
     /**
-     * Track article click to backend
+     * Track article click to backend (1回のみ)
      */
     async trackClick(article) {
         if (!this.trackingEnabled) return;
+
+        const key = `${this.getLatestCandidatesDate()}_${article.number}`;
+        if (this.trackedKeys.has(key)) return;
+
+        this.trackedKeys.add(key);
+        localStorage.setItem('trackedClicks', JSON.stringify([...this.trackedKeys]));
 
         try {
             await fetch('/api/track-click', {
