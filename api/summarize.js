@@ -40,9 +40,14 @@ export default async function handler(req, res) {
 
         const result = { article_text: articleContent, ai_summary: summary };
 
-        // 4. キャッシュに保存（非同期、レスポンスはブロックしない）
+        // 4. キャッシュに保存
         if (cacheKey) {
-            saveCache(cacheKey, result).catch(err => console.error('Cache save error:', err));
+            try {
+                await saveCache(cacheKey, result);
+                console.log('Cache saved:', cacheKey);
+            } catch (err) {
+                console.error('Cache save error:', err);
+            }
         }
 
         return res.status(200).json({ success: true, cached: false, ...result });
