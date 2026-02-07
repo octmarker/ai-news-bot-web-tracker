@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>AI 今日のニュースフィード - BrieflyAI</title>
+    <meta name="description" content="あなたにパーソナライズされた最新情報を、AIが要約してお届けします。">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#D95D39", // Burnt Orange
+                        "paper-bg": "#FDFBF7", // Light Cream/Beige
+                        "charcoal": "#333333", // Charcoal Grey
+                        "charcoal-muted": "#555555",
+                        "paper-border": "#E8E2D6",
+                    },
+                    fontFamily: {
+                        "display": ["Noto Serif JP", "serif"],
+                        "sans": ["Noto Sans JP", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "2xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: "Noto Sans JP", sans-serif;
+            background-color: #FDFBF7;
+            color: #333333;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .serif-font {
+            font-family: "Noto Serif JP", serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .japanese-tracking {
+            letter-spacing: 0.03em;
+        }
+        .newspaper-shadow {
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen selection:bg-primary/20">
+    <div class="layout-container flex flex-col min-h-screen">
+        <header
+            class="flex items-center justify-between border-b border-paper-border bg-paper-bg/95 backdrop-blur-sm px-6 md:px-10 py-4 sticky top-0 z-50">
+            <div class="flex items-center gap-10">
+                <div class="flex items-center gap-3 text-primary">
+                    <div class="size-9 flex items-center justify-center bg-primary rounded-sm text-paper-bg">
+                        <span class="material-symbols-outlined">auto_awesome</span>
+                    </div>
+                    <h2 class="text-charcoal text-xl font-black leading-tight tracking-tighter serif-font">AI
+                        今日のニュースフィード</h2>
+                </div>
+                <nav class="hidden md:flex items-center gap-8 ml-4">
+                    <a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary"
+                        href="#">デイリーフィード</a>
+                    <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
+                        href="#">インサイト</a>
+                    <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
+                        href="#">ライブラリ</a>
+                </nav>
+            </div>
+            <div class="flex flex-1 justify-end gap-6 items-center">
+                <div
+                    class="hidden lg:flex items-center gap-3 bg-[#F4F1EA] px-4 py-1.5 rounded-full border border-paper-border">
+                    <span class="material-symbols-outlined text-sm text-primary">bolt</span>
+                    <span class="text-[10px] font-bold text-charcoal-muted uppercase tracking-widest">AI エンジン稼働中</span>
+                </div>
+                <button class="text-charcoal-muted hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined">search</span>
+                </button>
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border border-paper-border grayscale-[0.2]"
+                    data-alt="User profile"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuANAnUFGtA3tI598erJl-e7gyZHYBrvIxvh1rpCg_2SOPg5fBS7OAeNiUqUJAjtu7d1GoYkosufrHLlZuKhH8eugdaCTlsD7l6hMaCAV1SZ_p5fA0OCya4mMy2iUtcDbCP08Jsqz71-eqikym_ghtgW81_LZSHGMH2IqhZqwqBxzGEg7zNKRXDiwqICYDIVM4JQvSgORrsJsFOTqjtTpqz7iZ40DKXbLPNkNrfaIolIkOeJThN9cHBRXOFtZWtI4y5bTDvII6CqS6o");'>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex flex-1 justify-center py-12">
+            <div class="layout-content-container flex flex-row max-w-[1050px] flex-1 gap-16 px-6">
+                <div class="flex flex-col flex-1 min-w-0">
+                    <div
+                        class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b-2 border-charcoal pb-8">
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-2 text-primary mb-1">
+                                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                                <span class="text-xs font-bold tracking-[0.2em] serif-font"
+                                    id="current-date">2024年10月24日 木曜日</span>
+                            </div>
+                            <h1 class="text-charcoal text-5xl font-black leading-tight japanese-tracking">AI 今日のまとめ</h1>
+                            <p class="text-charcoal-muted text-lg font-medium max-w-2xl serif-font italic">
+                                あなたにパーソナライズされた最新情報を、AIが要約してお届けします。</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                class="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-charcoal text-paper-bg text-xs font-bold hover:bg-primary transition-colors uppercase tracking-widest">
+                                <span class="material-symbols-outlined text-lg">tune</span>
+                                フィルター
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- News articles will be loaded dynamically -->
+                    <div id="news-articles-container" class="flex flex-col gap-10">
+                        <!-- Loading state -->
+                        <div class="flex flex-col items-center justify-center py-20 gap-6">
+                            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+                            <p class="text-charcoal-muted text-lg">ニュースを読み込み中...</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-16 mb-12">
+                        <button
+                            class="flex items-center gap-3 px-10 py-4 bg-charcoal text-paper-bg font-bold rounded-sm hover:bg-primary transition-all newspaper-shadow group">
+                            <span
+                                class="material-symbols-outlined text-lg group-hover:rotate-180 transition-transform duration-500">sync</span>
+                            <span class="uppercase tracking-widest text-xs">さらに新しい情報を生成</span>
+                        </button>
+                    </div>
+                </div>
+
+                <aside class="hidden lg:flex w-72 flex-col gap-10 sticky top-28 self-start">
+                    <div class="p-8 bg-charcoal text-paper-bg rounded-sm relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 size-32 bg-primary/20 rounded-full blur-3xl"></div>
+                        <div class="flex flex-col gap-6 relative z-10">
+                            <div class="flex items-center gap-2 border-b border-paper-bg/20 pb-4">
+                                <span class="material-symbols-outlined text-primary">auto_awesome</span>
+                                <span
+                                    class="text-[10px] font-bold uppercase tracking-[0.2em] serif-font">AI要約ステータス</span>
+                            </div>
+                            <div class="space-y-6">
+                                <div>
+                                    <p class="text-paper-bg/60 text-[10px] font-bold uppercase tracking-widest mb-1">
+                                        解析済み記事数</p>
+                                    <p class="text-3xl font-black serif-font">1,284</p>
+                                </div>
+                                <div>
+                                    <p class="text-paper-bg/60 text-[10px] font-bold uppercase tracking-widest mb-1">
+                                        節約された時間</p>
+                                    <p class="text-3xl font-black serif-font">3.5 <span
+                                            class="text-sm font-medium">時間</span></p>
+                                </div>
+                            </div>
+                            <div class="mt-2 pt-4 border-t border-paper-bg/10">
+                                <p class="text-xs text-paper-bg/70 leading-relaxed serif-font italic">
+                                    毎日5,000以上のソースをスキャンし、あなたにとって最も重要な情報を厳選して要約します。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-4 px-1">
+                        <h4
+                            class="text-charcoal text-xs font-black uppercase tracking-[0.2em] border-b border-charcoal pb-2">
+                            監視対象ソース</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                class="px-3 py-1 bg-[#F4F1EA] text-charcoal-muted rounded-sm text-[11px] font-bold border border-paper-border hover:border-primary transition-colors cursor-default">日本経済新聞</span>
+                            <span
+                                class="px-3 py-1 bg-[#F4F1EA] text-charcoal-muted rounded-sm text-[11px] font-bold border border-paper-border hover:border-primary transition-colors cursor-default">ロイター</span>
+                            <span
+                                class="px-3 py-1 bg-[#F4F1EA] text-charcoal-muted rounded-sm text-[11px] font-bold border border-paper-border hover:border-primary transition-colors cursor-default">TechCrunch</span>
+                            <span
+                                class="px-3 py-1 bg-[#F4F1EA] text-charcoal-muted rounded-sm text-[11px] font-bold border border-paper-border hover:border-primary transition-colors cursor-default">WIRED</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-6 bg-primary/5 border border-primary/20 rounded-sm">
+                        <p class="text-[11px] text-primary font-bold uppercase tracking-widest mb-2">Editor's Note</p>
+                        <p class="text-xs text-charcoal-muted leading-relaxed font-medium">
+                            「ソフトペーパー」モードは、長時間の読読による目の疲れを軽減するために設計されています。
+                        </p>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <footer class="bg-[#F4F1EA] border-t border-paper-border py-16 px-10 mt-12">
+            <div class="max-w-[1000px] mx-auto flex flex-col gap-12">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-10">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-2 text-primary">
+                            <span class="material-symbols-outlined">auto_awesome</span>
+                            <span class="font-black text-xl serif-font tracking-tighter text-charcoal">BrieflyAI</span>
+                        </div>
+                        <p class="text-sm text-charcoal-muted font-medium max-w-xs serif-font italic">
+                            現代の知性のための、ミニマルなインテリジェンス。</p>
+                    </div>
+                    <div
+                        class="grid grid-cols-2 gap-x-16 gap-y-4 text-xs font-bold uppercase tracking-widest text-charcoal-muted">
+                        <a class="hover:text-primary transition-colors" href="#">プライバシー</a>
+                        <a class="hover:text-primary transition-colors" href="#">利用規約</a>
+                        <a class="hover:text-primary transition-colors" href="#">サポート</a>
+                        <a class="hover:text-primary transition-colors" href="#">フィードバック</a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-paper-border gap-4">
+                    <p class="text-[10px] text-charcoal-muted font-bold uppercase tracking-[0.3em]">© 2024 BRIEFLY AI
+                        INC. — PRINTED DIGITALLY</p>
+                    <div class="flex gap-4">
+                        <div class="size-2 rounded-full bg-primary/40"></div>
+                        <div class="size-2 rounded-full bg-charcoal/20"></div>
+                        <div class="size-2 rounded-full bg-paper-border"></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="news-loader.js"></script>
+</body>
+
+</html>
