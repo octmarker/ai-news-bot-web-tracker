@@ -392,7 +392,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // 元記事の内容を表示
                     if (data.article_text && originalSection) {
                         originalSection.classList.remove('hidden');
-                        document.getElementById('original-content').textContent = data.article_text;
+                        const paragraphs = data.article_text
+                            .split(/(?<=[。．！？\n])\s*/)
+                            .filter(p => p.trim().length > 15)
+                            .map(p => `<p class="mb-4 indent-4">${p.trim()}</p>`)
+                            .join('');
+                        document.getElementById('original-content').innerHTML = paragraphs || `<p>${data.article_text}</p>`;
                     }
                 } catch (err) {
                     console.error('Summary API error:', err);
