@@ -101,7 +101,7 @@ async function generateSummary(title, articleContent) {
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `あなたはニュース記事の要約エキスパートです。以下の記事を日本語で要約してください。
 
