@@ -232,7 +232,7 @@ class NewsLoader {
 
             return `
                 <article class="group relative ${borderClass}" data-article='${JSON.stringify(article)}'>
-                    <a class="block article-link" href="${article.url}" target="_blank" rel="noopener noreferrer">
+                    <a class="block article-link" href="article.html?id=${article.number}&date=${this.getLatestCandidatesDate()}" data-original-url="${article.url}">
                         <div class="flex flex-col gap-4">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -264,11 +264,13 @@ class NewsLoader {
             `;
         }).join('');
 
-        // クリックイベントリスナーを追加
+        // クリックイベントリスナーを追加（追跡してからarticle.htmlへ遷移）
         container.querySelectorAll('.article-link').forEach(link => {
             link.addEventListener('click', (e) => {
+                e.preventDefault();
                 const article = JSON.parse(link.closest('article').dataset.article);
                 this.trackClick(article);
+                window.location.href = link.href;
             });
         });
     }
@@ -307,6 +309,51 @@ class NewsLoader {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', async () => {
     const loader = new NewsLoader();
+
+    // article.html の場合: 記事詳細を表示
+    const articleContent = document.getElementById('article-content');
+    if (articleContent) {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const articleId = parseInt(params.get('id'));
+            const date = params.get('date') || loader.getLatestCandidatesDate();
+
+            const markdown = await loader.fetchCandidates(date);
+            const articles = loader.parseMarkdown(markdown);
+            const article = articles.find(a => a.number === articleId);
+
+            if (!article) {
+                articleContent.innerHTML = '<p class="text-charcoal-muted">記事が見つかりません</p>';
+                return;
+            }
+
+            document.title = `${article.title} - BrieflyAI`;
+            const categoryInfo = loader.getCategoryInfo(article.category);
+            const readingTime = loader.calculateReadingTime(article.description);
+
+            articleContent.innerHTML = `
+                <h1 class="text-3xl font-bold mb-4" style="font-family: 'Noto Serif JP', serif">${article.title}</h1>
+                <div class="flex items-center gap-3 mb-8">
+                    <span class="px-2 py-0.5 rounded-sm text-[10px] font-bold ${categoryInfo.color} text-paper-bg tracking-widest uppercase">${categoryInfo.label}</span>
+                    <span class="text-sm text-charcoal-muted">${article.source} • ${date}</span>
+                    <span class="text-sm text-charcoal-muted">読了時間：${readingTime}分</span>
+                </div>
+                <div class="prose prose-lg max-w-none mb-8">
+                    <p class="text-charcoal leading-relaxed text-lg">${article.description}</p>
+                </div>
+                <a href="${article.url}" target="_blank" rel="noopener noreferrer"
+                   class="inline-block px-6 py-3 bg-primary text-white rounded hover:bg-primary/90 transition-colors">
+                    元記事を読む →
+                </a>
+            `;
+        } catch (error) {
+            console.error('Failed to load article:', error);
+            articleContent.innerHTML = '<p class="text-charcoal-muted">記事の読み込みに失敗しました</p>';
+        }
+        return;
+    }
+
+    // index.html の場合: 記事一覧を表示
     try {
         await loader.loadAndRender();
     } catch (error) {
