@@ -58,14 +58,17 @@ class NewsLoader {
      */
     async fetchCandidates(date = null) {
         const targetDate = date || this.getLatestCandidatesDate();
-        const url = `news/${targetDate}-candidates.md`;
+
+        // GitHub APIから直接取得（ローカルfile://でも動作する）
+        const ghUrl = `https://api.github.com/repos/octmarker/ai-news-bot/contents/news/${targetDate}-candidates.md`;
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(ghUrl);
             if (!response.ok) {
-                throw new Error(`Failed to fetch ${url}: ${response.status}`);
+                throw new Error(`Failed to fetch candidates: ${response.status}`);
             }
-            return await response.text();
+            const data = await response.json();
+            return atob(data.content);
         } catch (error) {
             console.error('Error fetching candidates:', error);
             throw error;
