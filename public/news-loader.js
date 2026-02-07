@@ -346,6 +346,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                     元記事を読む →
                 </a>
             `;
+
+            // AI要約と元記事の内容を非同期で取得
+            const summarySection = document.getElementById('ai-summary-section');
+            const originalSection = document.getElementById('original-content-section');
+            if (summarySection) {
+                summarySection.classList.remove('hidden');
+
+                try {
+                    const apiBase = window.location.protocol === 'file:' ? 'https://ai-news-bot-web-tracker.vercel.app' : '';
+                    const resp = await fetch(`${apiBase}/api/summarize`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: article.url, title: article.title })
+                    });
+                    const data = await resp.json();
+
+                    if (data.success && data.ai_summary) {
+                        const s = data.ai_summary;
+                        document.getElementById('ai-summary-content').innerHTML = `
+                            <p class="text-primary font-bold text-lg mb-3">${s.headline || ''}</p>
+                            <ul class="space-y-2 mb-4">
+                                ${(s.key_points || []).map(p => `
+                                    <li class="flex items-start gap-2">
+                                        <span class="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                                        <span class="text-charcoal">${p}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                            <p class="text-charcoal leading-relaxed mb-4">${s.detailed_summary || ''}</p>
+                            ${s.why_it_matters ? `
+                                <div class="bg-white rounded p-4 border border-primary/10">
+                                    <p class="text-sm font-bold text-primary mb-1">なぜ重要か</p>
+                                    <p class="text-charcoal text-sm">${s.why_it_matters}</p>
+                                </div>
+                            ` : ''}
+                        `;
+                    } else {
+                        document.getElementById('ai-summary-content').innerHTML =
+                            '<p class="text-charcoal-muted text-sm">要約の生成に失敗しました</p>';
+                    }
+
+                    // 元記事の内容を表示
+                    if (data.article_text && originalSection) {
+                        originalSection.classList.remove('hidden');
+                        document.getElementById('original-content').textContent = data.article_text;
+                    }
+                } catch (err) {
+                    console.error('Summary API error:', err);
+                    document.getElementById('ai-summary-content').innerHTML =
+                        '<p class="text-charcoal-muted text-sm">要約の取得に失敗しました</p>';
+                }
+            }
         } catch (error) {
             console.error('Failed to load article:', error);
             articleContent.innerHTML = '<p class="text-charcoal-muted">記事の読み込みに失敗しました</p>';

@@ -6,6 +6,7 @@
     <title>記事詳細 - BrieflyAI</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             theme: {
@@ -32,12 +33,15 @@
             color: #333333;
             line-height: 1.8;
         }
-        h1, h2 { font-family: "Noto Serif JP", serif; }
+        h1, h2, h3 { font-family: "Noto Serif JP", serif; }
     </style>
 </head>
 <body class="min-h-screen">
     <div class="max-w-3xl mx-auto px-4 py-8">
-        <a href="index.html" class="text-primary hover:underline mb-4 inline-block">&larr; 一覧に戻る</a>
+        <a href="index.html" class="text-primary hover:underline mb-6 inline-flex items-center gap-1 text-sm font-medium">
+            <span class="material-symbols-outlined text-base">arrow_back</span>
+            一覧に戻る
+        </a>
 
         <article id="article-content">
             <div class="animate-pulse">
@@ -50,6 +54,36 @@
                 </div>
             </div>
         </article>
+
+        <!-- AI要約セクション -->
+        <div id="ai-summary-section" class="hidden mt-10">
+            <div class="border border-primary/20 rounded-lg bg-primary/5 p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-primary">auto_awesome</span>
+                    <h2 class="text-lg font-bold text-charcoal">AI による要約</h2>
+                </div>
+                <div id="ai-summary-content">
+                    <div class="animate-pulse space-y-3">
+                        <div class="h-4 bg-primary/10 rounded"></div>
+                        <div class="h-4 bg-primary/10 rounded w-5/6"></div>
+                        <div class="h-4 bg-primary/10 rounded w-4/6"></div>
+                    </div>
+                    <p class="text-charcoal-muted text-sm mt-3">AIが記事を分析中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 元記事の内容セクション -->
+        <div id="original-content-section" class="hidden mt-8">
+            <div class="border border-paper-border rounded-lg p-6">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="material-symbols-outlined text-charcoal-muted">article</span>
+                    <h2 class="text-lg font-bold text-charcoal">元記事の内容</h2>
+                </div>
+                <div id="original-content" class="text-charcoal-muted leading-relaxed text-sm max-h-96 overflow-y-auto">
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="news-loader.js"></script>
