@@ -1,5 +1,14 @@
 {
-  "clicks": [],
+  "clicks": [
+    {
+      "article_number": 5,
+      "title": "Amazon決算、AWS成長率24％に加速 AIインフラ投資で2026年は2000億ドルの設備投資を計画",
+      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHBZpoxVmAadsWSaUFlw4MvOu9k2BOMAeyLTuwoEL543terbQYwTVuBzAHcxuNiQF8A3sllHtAELAeV3BoGWN2gBUpvz8uTMC7QRDdSr9y0FAFbItKtiJRX1NB7Q7dvN2rOrR7tkh6ztEY2udnjg741fyeYMeyc9A==",
+      "category": "科学",
+      "source": "ITmedia",
+      "clicked_at": "2026-02-07T13:42:39.716Z"
+    }
+  ],
   "created_at": "2026-02-07T00:00:00.000Z",
   "metadata": {
     "description": "Web tracker experimental data - article click history",
