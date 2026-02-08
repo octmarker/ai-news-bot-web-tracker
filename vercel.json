@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/analyze-preferences",
+      "schedule": "30 23 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/news/:date-candidates.md",
