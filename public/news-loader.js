@@ -11,37 +11,108 @@ class NewsLoader {
             '科学': { label: '科学', color: 'bg-primary/80' }
         };
         this.trackingEnabled = true;
-        this.trackedKeys = new Set(JSON.parse(localStorage.getItem('trackedClicks') || '[]'));
+        this.signalQueue = [];
+        // 旧キーからの移行
+        const legacy = localStorage.getItem('trackedClicks');
+        if (legacy && !localStorage.getItem('trackedSignals')) {
+            localStorage.setItem('trackedSignals', legacy);
+            localStorage.removeItem('trackedClicks');
+        }
+        this.trackedKeys = new Set(JSON.parse(localStorage.getItem('trackedSignals') || '[]'));
+        this.dislikedKeys = new Set(JSON.parse(localStorage.getItem('dislikedArticles') || '[]'));
+
+        // ページ離脱時・非表示時にバッチ送信
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') this.flushSignals();
+        });
+        window.addEventListener('beforeunload', () => this.flushSignals());
     }
 
     /**
-     * Track article click to backend (1回のみ)
+     * Queue positive signal (記事クリック時)
      */
-    async trackClick(article) {
+    trackClick(article) {
         if (!this.trackingEnabled) return;
 
         const key = `${this.getLatestCandidatesDate()}_${article.number}`;
         if (this.trackedKeys.has(key)) return;
 
         this.trackedKeys.add(key);
-        localStorage.setItem('trackedClicks', JSON.stringify([...this.trackedKeys]));
+        localStorage.setItem('trackedSignals', JSON.stringify([...this.trackedKeys]));
 
-        try {
-            await fetch('/api/track-click', {
+        this.signalQueue.push({
+            type: 'positive',
+            article_number: article.number,
+            title: article.title,
+            url: article.url,
+            category: article.category,
+            source: article.source,
+            timestamp: new Date().toISOString()
+        });
+        console.log('Signal queued (positive):', article.title);
+    }
+
+    /**
+     * Queue negative signal (興味なしボタン)
+     */
+    trackDislike(article) {
+        if (!this.trackingEnabled) return;
+
+        const key = `${this.getLatestCandidatesDate()}_${article.number}`;
+        const isDisliked = this.dislikedKeys.has(key);
+
+        if (isDisliked) {
+            // トグル解除：dislikedから除去
+            this.dislikedKeys.delete(key);
+            localStorage.setItem('dislikedArticles', JSON.stringify([...this.dislikedKeys]));
+            // キューから該当のnegativeシグナルを除去（未送信の場合）
+            this.signalQueue = this.signalQueue.filter(
+                s => !(s.type === 'negative' && s.article_number === article.number)
+            );
+            console.log('Dislike removed:', article.title);
+            return false; // 解除された
+        }
+
+        this.dislikedKeys.add(key);
+        localStorage.setItem('dislikedArticles', JSON.stringify([...this.dislikedKeys]));
+
+        this.signalQueue.push({
+            type: 'negative',
+            article_number: article.number,
+            title: article.title,
+            url: article.url,
+            category: article.category,
+            source: article.source,
+            timestamp: new Date().toISOString()
+        });
+        console.log('Signal queued (negative):', article.title);
+        return true; // dislike追加
+    }
+
+    /**
+     * Flush queued signals to backend in a single batch
+     */
+    flushSignals() {
+        if (this.signalQueue.length === 0) return;
+
+        const payload = JSON.stringify({ signals: this.signalQueue });
+        this.signalQueue = [];
+
+        const apiBase = window.location.protocol === 'file:' ? 'https://ai-news-bot-web-tracker.vercel.app' : '';
+        const url = `${apiBase}/api/track-signals`;
+
+        // sendBeaconはページ離脱時でも確実に送信される
+        const sent = navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
+        if (sent) {
+            console.log('Signals flushed via sendBeacon');
+        } else {
+            // フォールバック：sendBeaconが失敗した場合
+            fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    article_number: article.number,
-                    title: article.title,
-                    url: article.url,
-                    category: article.category,
-                    source: article.source,
-                    clicked_at: new Date().toISOString()
-                })
-            });
-            console.log('Click tracked:', article.title);
-        } catch (error) {
-            console.error('Failed to track click:', error);
+                body: payload,
+                keepalive: true
+            }).catch(err => console.error('Failed to flush signals:', err));
         }
     }
 
@@ -224,15 +295,20 @@ class NewsLoader {
             return;
         }
 
+        const date = this.getLatestCandidatesDate();
+
         container.innerHTML = articles.map((article, index) => {
             const categoryInfo = this.getCategoryInfo(article.category);
             const readingTime = this.calculateReadingTime(article.description);
             const timeAgo = this.formatTimeAgo(article.number);
             const borderClass = index > 0 ? 'pt-10 border-t border-paper-border' : '';
+            const dislikeKey = `${date}_${article.number}`;
+            const isDisliked = this.dislikedKeys.has(dislikeKey);
+            const dislikedStyle = isDisliked ? 'opacity-30' : '';
 
             return `
-                <article class="group relative ${borderClass}" data-article='${JSON.stringify(article)}'>
-                    <a class="block article-link" href="article.html?id=${article.number}&date=${this.getLatestCandidatesDate()}" data-original-url="${article.url}">
+                <article class="group relative transition-opacity duration-300 ${borderClass} ${dislikedStyle}" data-article='${JSON.stringify(article)}' data-article-num="${article.number}">
+                    <a class="block article-link" href="article.html?id=${article.number}&date=${date}" data-original-url="${article.url}">
                         <div class="flex flex-col gap-4">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -248,29 +324,60 @@ class NewsLoader {
                                     ${article.description}
                                 </p>
                             </div>
-                            <div class="flex items-center gap-6 mt-2 pt-4 border-t border-paper-border">
-                                <div class="flex items-center gap-1.5 text-[11px] font-bold text-charcoal-muted uppercase tracking-wider">
-                                    <span class="material-symbols-outlined text-base">schedule</span>
-                                    読了時間：${readingTime}分
-                                </div>
-                                <div class="flex items-center gap-1.5 text-[11px] font-bold text-primary uppercase tracking-wider">
-                                    <span class="material-symbols-outlined text-base">psychology</span>
-                                    関連度 ${article.relevance}%
+                            <div class="flex items-center justify-between mt-2 pt-4 border-t border-paper-border">
+                                <div class="flex items-center gap-6">
+                                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-charcoal-muted uppercase tracking-wider">
+                                        <span class="material-symbols-outlined text-base">schedule</span>
+                                        読了時間：${readingTime}分
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-primary uppercase tracking-wider">
+                                        <span class="material-symbols-outlined text-base">psychology</span>
+                                        関連度 ${article.relevance}%
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </a>
+                    <button class="dislike-btn absolute bottom-4 right-0 flex items-center gap-1 text-[11px] font-bold tracking-wider transition-colors ${isDisliked ? 'text-red-400' : 'text-charcoal-muted/40 hover:text-red-400'}" data-article-num="${article.number}">
+                        <span class="material-symbols-outlined text-base">block</span>
+                        <span class="dislike-label">${isDisliked ? '取消' : '興味なし'}</span>
+                    </button>
                 </article>
             `;
         }).join('');
 
-        // クリックイベントリスナーを追加（追跡してからarticle.htmlへ遷移）
+        // クリックイベントリスナー（positiveシグナルをキューに追加してから遷移）
         container.querySelectorAll('.article-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const article = JSON.parse(link.closest('article').dataset.article);
                 this.trackClick(article);
+                // 遷移前にキューをflush（遷移でbeforeunloadが発火するが念のため）
+                this.flushSignals();
                 window.location.href = link.href;
+            });
+        });
+
+        // 興味なしボタンのイベントリスナー
+        container.querySelectorAll('.dislike-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const articleEl = btn.closest('article');
+                const article = JSON.parse(articleEl.dataset.article);
+                const isNowDisliked = this.trackDislike(article);
+
+                if (isNowDisliked) {
+                    articleEl.classList.add('opacity-30');
+                    btn.classList.remove('text-charcoal-muted/40', 'hover:text-red-400');
+                    btn.classList.add('text-red-400');
+                    btn.querySelector('.dislike-label').textContent = '取消';
+                } else {
+                    articleEl.classList.remove('opacity-30');
+                    btn.classList.add('text-charcoal-muted/40', 'hover:text-red-400');
+                    btn.classList.remove('text-red-400');
+                    btn.querySelector('.dislike-label').textContent = '興味なし';
+                }
             });
         });
     }
