@@ -17,6 +17,15 @@
       "category": "科学",
       "source": "EWGT 2025",
       "clicked_at": "2026-02-08T06:33:42.588Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 999,
+      "title": "fetch direct test",
+      "url": "http://debug.test",
+      "category": "科学",
+      "source": "debug",
+      "clicked_at": "2026-02-08T06:39:41.371Z"
     }
   ],
   "created_at": "2026-02-08T00:00:00.000Z",
