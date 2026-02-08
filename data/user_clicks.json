@@ -1,5 +1,54 @@
 {
-  "clicks": [],
+  "clicks": [
+    {
+      "type": "positive",
+      "article_number": 1,
+      "title": "Claude 4.5 Sonnetが発表、コーディング能力が大幅向上",
+      "category": "AI・テクノロジー",
+      "source": "Anthropic Blog",
+      "clicked_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 3,
+      "title": "日銀、追加利上げ見送り 市場は安堵",
+      "category": "金融・経済",
+      "source": "日経新聞",
+      "clicked_at": "2026-02-08T10:05:00Z"
+    },
+    {
+      "type": "negative",
+      "article_number": 5,
+      "title": "芸能人の結婚ニュース速報",
+      "category": "エンタメ",
+      "source": "Yahoo!ニュース",
+      "clicked_at": "2026-02-08T10:10:00Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 8,
+      "title": "Gemini 2.5 Flash、マルチモーダル性能でGPT-4oを上回る",
+      "category": "AI・テクノロジー",
+      "source": "Google AI Blog",
+      "clicked_at": "2026-02-08T10:15:00Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 2,
+      "title": "Apple、CarPlayでサードパーティ製AIチャットボットを許可",
+      "category": "AI・テクノロジー",
+      "source": "The Verge",
+      "clicked_at": "2026-02-08T06:30:00Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 13,
+      "title": "AIの学習データ枯渇問題：サム・アルトマン氏「巨大モデルの時代は終わった」",
+      "category": "AI・テクノロジー",
+      "source": "Wired",
+      "clicked_at": "2026-02-08T12:00:00Z"
+    }
+  ],
   "created_at": "2026-02-08T00:00:00.000Z",
   "metadata": {
     "description": "Web tracker experimental data - article click history",
