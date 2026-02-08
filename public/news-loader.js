@@ -90,7 +90,7 @@ class NewsLoader {
     }
 
     /**
-     * Flush queued signals to backend in a single batch
+     * Flush queued signals via sendBeacon (ページ離脱/タブ切替用)
      */
     flushSignals() {
         if (this.signalQueue.length === 0) return;
@@ -101,19 +101,36 @@ class NewsLoader {
         const apiBase = window.location.protocol === 'file:' ? 'https://ai-news-bot-web-tracker.vercel.app' : '';
         const url = `${apiBase}/api/track-signals`;
 
-        // sendBeaconはページ離脱時でも確実に送信される
         const sent = navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
-        if (sent) {
-            console.log('Signals flushed via sendBeacon');
-        } else {
-            // フォールバック：sendBeaconが失敗した場合
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: payload,
-                keepalive: true
-            }).catch(err => console.error('Failed to flush signals:', err));
-        }
+        console.log('Signals flushed via sendBeacon:', sent);
+    }
+
+    /**
+     * Flush queued signals via fetch and wait for completion (記事クリック遷移用)
+     * タイムアウト2秒で遷移を保証
+     */
+    flushSignalsAsync() {
+        if (this.signalQueue.length === 0) return Promise.resolve();
+
+        const payload = JSON.stringify({ signals: this.signalQueue });
+        this.signalQueue = [];
+
+        const apiBase = window.location.protocol === 'file:' ? 'https://ai-news-bot-web-tracker.vercel.app' : '';
+        const url = `${apiBase}/api/track-signals`;
+
+        const timeout = new Promise(resolve => setTimeout(resolve, 2000));
+        const request = fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true
+        }).then(r => {
+            console.log('Signals flushed via fetch:', r.status);
+        }).catch(err => {
+            console.error('Failed to flush signals:', err);
+        });
+
+        return Promise.race([request, timeout]);
     }
 
     /**
@@ -346,15 +363,17 @@ class NewsLoader {
             `;
         }).join('');
 
-        // クリックイベントリスナー（positiveシグナルをキューに追加してから遷移）
+        // クリックイベントリスナー（positiveシグナルを送信完了してから遷移）
         container.querySelectorAll('.article-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
+                const href = link.href;
                 const article = JSON.parse(link.closest('article').dataset.article);
                 this.trackClick(article);
-                // 遷移前にキューをflush（遷移でbeforeunloadが発火するが念のため）
-                this.flushSignals();
-                window.location.href = link.href;
+                // fetchで送信完了を待ってから遷移（タイムアウト2秒）
+                this.flushSignalsAsync().finally(() => {
+                    window.location.href = href;
+                });
             });
         });
 
