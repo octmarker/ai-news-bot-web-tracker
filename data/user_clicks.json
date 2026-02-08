@@ -1,55 +1,6 @@
 {
-  "clicks": [
-    {
-      "article_number": 5,
-      "title": "Amazon決算、AWS成長率24％に加速 AIインフラ投資で2026年は2000億ドルの設備投資を計画",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHBZpoxVmAadsWSaUFlw4MvOu9k2BOMAeyLTuwoEL543terbQYwTVuBzAHcxuNiQF8A3sllHtAELAeV3BoGWN2gBUpvz8uTMC7QRDdSr9y0FAFbItKtiJRX1NB7Q7dvN2rOrR7tkh6ztEY2udnjg741fyeYMeyc9A==",
-      "category": "科学",
-      "source": "ITmedia",
-      "clicked_at": "2026-02-07T13:42:39.716Z"
-    },
-    {
-      "article_number": 6,
-      "title": "プログラミング雑記 2026年2月6日 #AI",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHJXOZdhJUDAxRUmijB9NWrQ9SXZ_iH0RnmcCP1TQNSTzJZQnph30ZqwJXzMBmjWbpKPxM9V5d-W-IxBLzPjuVdAk2TZdSltxZGZatzfvkFJcgBE5G2FyPaMK4RVMCCyVamQK7o5rvOVoe5SyZu2zeR",
-      "category": "科学",
-      "source": "Qiita",
-      "clicked_at": "2026-02-07T13:43:29.516Z"
-    },
-    {
-      "article_number": 6,
-      "title": "プログラミング雑記 2026年2月6日 #AI",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHJXOZdhJUDAxRUmijB9NWrQ9SXZ_iH0RnmcCP1TQNSTzJZQnph30ZqwJXzMBmjWbpKPxM9V5d-W-IxBLzPjuVdAk2TZdSltxZGZatzfvkFJcgBE5G2FyPaMK4RVMCCyVamQK7o5rvOVoe5SyZu2zeR",
-      "category": "科学",
-      "source": "Qiita",
-      "clicked_at": "2026-02-07T13:44:38.511Z"
-    },
-    {
-      "article_number": 10,
-      "title": "Claude Opus 4.6がプログラミングコンテストを席巻！500のゼロデイ脆弱性を発見、Kライン出来高分布を生成、さらにPPT直接出力も",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQE-4IDXB4nrkH_gFRoCh4lPBOEgeBw2J_LeVcwlPBuzpOTdcY1fH17zwKoBU9uJPU7kSgzvGKBHh2UXC7v6bCqHyXLEwx-IVZFifwTxDl6pBNyydhR1XzkFw6l20Q==",
-      "category": "科学",
-      "source": "智東西",
-      "clicked_at": "2026-02-07T13:45:22.827Z"
-    },
-    {
-      "article_number": 1,
-      "title": "Anthropic、最上位モデル「Claude Opus 4.6」公開 最高性能とパワポ作成",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFZA3mXsFI-vyVnyL1-d0HtPYAuBa-s5ZBQ0e9gTJZUd0P55ZGrVxG8K4bMt9YQZcmJ3sAuL8fzhtcfthuB4w8Lhx9MtgX-6fLGZNEC-EWu_Z_tJ24PINGmYENq3MRRooHD0V-T2BsPYBbHya0WyG1D9A==",
-      "category": "科学",
-      "source": "Impress Watch",
-      "clicked_at": "2026-02-07T14:55:38.450Z"
-    },
-    {
-      "article_number": 1,
-      "title": "AIの学習データ枯渇問題：サム・アルトマン氏「巨大モデルの時代は終わった」",
-      "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGPcCIlTRx7RODtGCq37mhhSU_0DktZMHhjft3zuvehaupo_v6X4gRScgzmQuSmIgHftcSXcUU3I6E19qGCPkaJZ2JTwHFMndWXk0xlO4PSDHaguiiQw-v7d4a4p_OJom7skD02",
-      "category": "科学",
-      "source": "オリコンニュース（ORICON NEWS）",
-      "clicked_at": "2026-02-08T02:09:39.006Z"
-    }
-  ],
-  "created_at": "2026-02-07T00:00:00.000Z",
+  "clicks": [],
+  "created_at": "2026-02-08T00:00:00.000Z",
   "metadata": {
     "description": "Web tracker experimental data - article click history",
     "format_version": "1.0"

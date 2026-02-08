@@ -116,7 +116,55 @@ async function saveCache(cacheKey, data) {
 }
 
 /**
- * 元記事のHTMLを取得してテキスト抽出
+ * レスポンスからエンコーディングを検出
+ */
+function detectEncoding(headers, buffer) {
+    // 1. Content-Type ヘッダーから charset を取得
+    const contentType = headers.get('content-type') || '';
+    const charsetMatch = contentType.match(/charset=([^\s;]+)/i);
+    if (charsetMatch) {
+        return normalizeEncoding(charsetMatch[1]);
+    }
+
+    // 2. HTML の meta タグから charset を取得（最初の4KBをlatin1で読む）
+    const bytes = new Uint8Array(buffer, 0, Math.min(4096, buffer.byteLength));
+    const preview = new TextDecoder('latin1').decode(bytes);
+
+    const metaCharset = preview.match(/<meta[^>]+charset=["']?([^"'\s;>]+)/i);
+    if (metaCharset) {
+        return normalizeEncoding(metaCharset[1]);
+    }
+
+    const metaHttpEquiv = preview.match(/<meta[^>]+content=["'][^"']*charset=([^"'\s;]+)/i);
+    if (metaHttpEquiv) {
+        return normalizeEncoding(metaHttpEquiv[1]);
+    }
+
+    return 'utf-8';
+}
+
+/**
+ * エンコーディング名を標準形式に正規化
+ */
+function normalizeEncoding(encoding) {
+    const lower = encoding.toLowerCase().trim();
+    const aliases = {
+        'shift_jis': 'shift_jis',
+        'shift-jis': 'shift_jis',
+        'shiftjis': 'shift_jis',
+        'sjis': 'shift_jis',
+        'x-sjis': 'shift_jis',
+        'euc-jp': 'euc-jp',
+        'eucjp': 'euc-jp',
+        'x-euc-jp': 'euc-jp',
+        'iso-2022-jp': 'iso-2022-jp',
+        'iso2022jp': 'iso-2022-jp',
+    };
+    return aliases[lower] || lower;
+}
+
+/**
+ * 元記事のHTMLを取得してテキスト抽出（エンコーディング自動検出）
  */
 async function fetchArticleContent(url) {
     try {
@@ -132,7 +180,9 @@ async function fetchArticleContent(url) {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const html = await response.text();
+        const buffer = await response.arrayBuffer();
+        const encoding = detectEncoding(response.headers, buffer);
+        const html = new TextDecoder(encoding).decode(new Uint8Array(buffer));
         return extractMainContent(html);
     } catch (error) {
         console.error('Fetch error:', error.message);
