@@ -2,39 +2,12 @@
   "clicks": [
     {
       "type": "positive",
-      "article_number": 1,
-      "title": "テスト記事",
-      "url": "http://test.com",
-      "category": "科学",
-      "source": "test",
-      "clicked_at": "2026-02-08T12:30:00Z"
-    },
-    {
-      "type": "positive",
       "article_number": 2,
       "title": "CES 2026：視覚革命がスクリーンにもたらされる",
       "url": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQF6QNWj8U-RLg1_klU4DCQvgWvYCAQg_iF82CW4bciK3eDC2SLwvP4vUvPfmdv167zThRlddpRW_Hc-JjYeWUXBDlO6h1o2zyRIaxi4D3Fv-gWzwXRkWID9oWHK",
       "category": "科学",
       "source": "EWGT 2025",
       "clicked_at": "2026-02-08T06:33:42.588Z"
-    },
-    {
-      "type": "positive",
-      "article_number": 999,
-      "title": "fetch direct test",
-      "url": "http://debug.test",
-      "category": "科学",
-      "source": "debug",
-      "clicked_at": "2026-02-08T06:39:41.371Z"
-    },
-    {
-      "type": "positive",
-      "article_number": 998,
-      "title": "sendBeacon direct test",
-      "url": "http://beacon.test",
-      "category": "科学",
-      "source": "beacon",
-      "clicked_at": "2026-02-08T06:40:14.944Z"
     },
     {
       "type": "positive",
