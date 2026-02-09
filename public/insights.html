@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>インサイト - BrieflyAI</title>
+    <meta name="description" content="あなたのニュース傾向を可視化します。">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#D95D39",
+                        "paper-bg": "#FDFBF7",
+                        "charcoal": "#333333",
+                        "charcoal-muted": "#555555",
+                        "paper-border": "#E8E2D6",
+                    },
+                    fontFamily: {
+                        "display": ["Noto Serif JP", "serif"],
+                        "sans": ["Noto Sans JP", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "2xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        body {
+            font-family: "Noto Sans JP", sans-serif;
+            background-color: #FDFBF7;
+            color: #333333;
+            line-height: 1.8;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .serif-font {
+            font-family: "Noto Serif JP", serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .japanese-tracking {
+            letter-spacing: 0.03em;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen selection:bg-primary/20">
+    <div class="layout-container flex flex-col min-h-screen">
+        <header
+            class="flex items-center justify-between border-b border-paper-border bg-paper-bg/95 backdrop-blur-sm px-6 md:px-10 py-4 sticky top-0 z-50">
+            <div class="flex items-center gap-10">
+                <a href="index.html" class="flex items-center gap-3 text-primary">
+                    <div class="size-9 flex items-center justify-center bg-primary rounded-sm text-paper-bg">
+                        <span class="material-symbols-outlined">auto_awesome</span>
+                    </div>
+                    <h2 class="text-charcoal text-xl font-black leading-tight tracking-tighter serif-font">AI
+                        今日のニュースフィード</h2>
+                </a>
+                <nav class="hidden md:flex items-center gap-8 ml-4">
+                    <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
+                        href="index.html">デイリーフィード</a>
+                    <a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary"
+                        href="insights.html">インサイト</a>
+                    <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
+                        href="#">ライブラリ</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="flex flex-1 justify-center py-12">
+            <div class="flex flex-col max-w-[800px] flex-1 px-6">
+                <div class="flex flex-col gap-3 mb-12 border-b-2 border-charcoal pb-8">
+                    <div class="flex items-center gap-2 text-primary mb-1">
+                        <span class="material-symbols-outlined text-sm">insights</span>
+                        <span class="text-xs font-bold tracking-[0.2em] serif-font">YOUR PROFILE</span>
+                    </div>
+                    <h1 class="text-charcoal text-5xl font-black leading-tight japanese-tracking">インサイト</h1>
+                    <p class="text-charcoal-muted text-lg font-medium serif-font italic">
+                        あなたのニュース傾向をAIが分析した結果です。</p>
+                </div>
+
+                <!-- Loading -->
+                <div id="insights-loading" class="flex flex-col items-center justify-center py-20 gap-6">
+                    <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+                    <p class="text-charcoal-muted text-lg">プリファレンスデータを読み込み中...</p>
+                </div>
+
+                <!-- Content (hidden until loaded) -->
+                <div id="insights-content" class="hidden flex flex-col gap-12">
+
+                    <!-- Learning Phase -->
+                    <section>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">school</span>
+                            <h2 class="text-xl font-bold">学習フェーズ</h2>
+                        </div>
+                        <div class="p-6 border border-paper-border rounded-sm bg-white">
+                            <div class="flex items-center justify-between mb-3">
+                                <span id="phase-label" class="text-sm font-bold text-charcoal-muted"></span>
+                                <span id="phase-number" class="text-sm font-bold text-primary"></span>
+                            </div>
+                            <div class="w-full h-3 bg-[#F4F1EA] rounded-full overflow-hidden">
+                                <div id="phase-bar" class="h-full bg-primary rounded-full transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                            <p id="phase-description" class="text-sm text-charcoal-muted mt-3"></p>
+                        </div>
+                    </section>
+
+                    <!-- Category Distribution -->
+                    <section>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">donut_large</span>
+                            <h2 class="text-xl font-bold">カテゴリ分布</h2>
+                        </div>
+                        <div id="category-bars" class="p-6 border border-paper-border rounded-sm bg-white space-y-4">
+                        </div>
+                    </section>
+
+                    <!-- Boosted Keywords -->
+                    <section>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">trending_up</span>
+                            <h2 class="text-xl font-bold">興味キーワード</h2>
+                        </div>
+                        <div class="p-6 border border-paper-border rounded-sm bg-white">
+                            <div id="boosted-keywords" class="flex flex-wrap gap-2"></div>
+                            <div id="suppressed-section" class="hidden mt-6 pt-4 border-t border-paper-border">
+                                <p class="text-xs font-bold text-charcoal-muted uppercase tracking-widest mb-3">抑制キーワード</p>
+                                <div id="suppressed-keywords" class="flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Learned Interests -->
+                    <section>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">psychology</span>
+                            <h2 class="text-xl font-bold">学習された興味</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="p-6 border border-paper-border rounded-sm bg-white">
+                                <p class="text-xs font-bold text-charcoal-muted uppercase tracking-widest mb-4">トピック</p>
+                                <div id="interest-topics" class="space-y-3"></div>
+                            </div>
+                            <div class="p-6 border border-paper-border rounded-sm bg-white">
+                                <p class="text-xs font-bold text-charcoal-muted uppercase tracking-widest mb-4">ソース</p>
+                                <div id="interest-sources" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Selection History -->
+                    <section>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-primary">history</span>
+                            <h2 class="text-xl font-bold">選択履歴</h2>
+                        </div>
+                        <div id="selection-history" class="space-y-4"></div>
+                    </section>
+
+                    <!-- Last Updated -->
+                    <div class="text-center text-xs text-charcoal-muted py-4 border-t border-paper-border">
+                        最終更新: <span id="last-updated"></span>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div id="insights-error" class="hidden flex flex-col items-center justify-center py-20 gap-6">
+                    <span class="material-symbols-outlined text-6xl text-charcoal-muted">error_outline</span>
+                    <h3 class="text-2xl font-bold text-charcoal">データの読み込みに失敗しました</h3>
+                    <p class="text-charcoal-muted">プリファレンスデータが見つかりませんでした。記事をいくつかクリックすると分析が始まります。</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="bg-[#F4F1EA] border-t border-paper-border py-16 px-10 mt-12">
+            <div class="max-w-[1000px] mx-auto flex flex-col gap-12">
+                <div class="flex flex-col md:flex-row justify-between items-start gap-10">
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-2 text-primary">
+                            <span class="material-symbols-outlined">auto_awesome</span>
+                            <span class="font-black text-xl serif-font tracking-tighter text-charcoal">BrieflyAI</span>
+                        </div>
+                        <p class="text-sm text-charcoal-muted font-medium max-w-xs serif-font italic">
+                            現代の知性のための、ミニマルなインテリジェンス。</p>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-paper-border gap-4">
+                    <p class="text-[10px] text-charcoal-muted font-bold uppercase tracking-[0.3em]">&copy; 2024 BRIEFLY AI INC.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const PHASE_LABELS = {
+            0: { label: 'データ不足', desc: 'まだクリックデータが5件未満です。記事をクリックしてAIの学習を始めましょう。' },
+            1: { label: '初期学習', desc: 'クリックデータからキーワードの学習を開始しました。引き続き記事を読むことで精度が上がります。' },
+            2: { label: '中期学習', desc: 'カテゴリ分布やソースの好みも学習中です。あと少しで完全なパーソナライゼーションが有効になります。' },
+            3: { label: '成熟', desc: 'パーソナライゼーションが完全に有効です。セレンディピティ枠で新しい発見も提供します。' }
+        };
+
+        const CATEGORY_LABELS = {
+            ai: { label: 'AI・テクノロジー', color: '#D95D39' },
+            finance: { label: '経済・金融', color: '#333333' },
+            politics: { label: '政治・政策', color: '#7a6a55' },
+            other: { label: 'その他', color: '#999999' }
+        };
+
+        async function loadInsights() {
+            try {
+                const url = 'https://api.github.com/repos/octmarker/ai-news-bot/contents/user_preferences.json';
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const binary = atob(data.content);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const prefs = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+
+                document.getElementById('insights-loading').classList.add('hidden');
+                document.getElementById('insights-content').classList.remove('hidden');
+                renderInsights(prefs);
+            } catch (err) {
+                console.error('Failed to load preferences:', err);
+                document.getElementById('insights-loading').classList.add('hidden');
+                document.getElementById('insights-error').classList.remove('hidden');
+            }
+        }
+
+        function renderInsights(prefs) {
+            // Learning Phase
+            const phase = prefs.learning_phase || 0;
+            const phaseInfo = PHASE_LABELS[phase] || PHASE_LABELS[0];
+            document.getElementById('phase-label').textContent = phaseInfo.label;
+            document.getElementById('phase-number').textContent = `フェーズ ${phase} / 3`;
+            document.getElementById('phase-bar').style.width = `${(phase / 3) * 100}%`;
+            document.getElementById('phase-description').textContent = phaseInfo.desc;
+
+            // Category Distribution
+            const catDist = prefs.search_config?.category_distribution || {};
+            const catBars = document.getElementById('category-bars');
+            catBars.innerHTML = Object.entries(CATEGORY_LABELS).map(([key, info]) => {
+                const value = catDist[key] || 0;
+                const pct = Math.round(value * 100);
+                return `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-sm font-bold">${info.label}</span>
+                            <span class="text-sm font-bold text-charcoal-muted">${pct}%</span>
+                        </div>
+                        <div class="w-full h-6 bg-[#F4F1EA] rounded-sm overflow-hidden">
+                            <div class="h-full rounded-sm transition-all duration-700" style="width: ${pct}%; background-color: ${info.color}"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Boosted Keywords
+            const boosted = prefs.search_config?.boosted_keywords || [];
+            document.getElementById('boosted-keywords').innerHTML = boosted.map(kw =>
+                `<span class="px-3 py-1.5 bg-primary/10 text-primary rounded-sm text-sm font-bold border border-primary/20">${kw}</span>`
+            ).join('');
+
+            // Suppressed Keywords
+            const suppressed = prefs.search_config?.suppressed_keywords || [];
+            if (suppressed.length > 0) {
+                document.getElementById('suppressed-section').classList.remove('hidden');
+                document.getElementById('suppressed-keywords').innerHTML = suppressed.map(kw =>
+                    `<span class="px-3 py-1.5 bg-gray-100 text-charcoal-muted rounded-sm text-sm font-bold border border-gray-200 line-through">${kw}</span>`
+                ).join('');
+            }
+
+            // Learned Interests - Topics
+            const topics = prefs.learned_interests?.topics || {};
+            const topicEntries = Object.entries(topics).sort((a, b) => b[1] - a[1]);
+            document.getElementById('interest-topics').innerHTML = topicEntries.length > 0
+                ? topicEntries.map(([topic, weight]) => {
+                    const pct = Math.round(weight * 100);
+                    const barWidth = Math.max(pct * 5, 10); // 視認性のためスケール
+                    return `
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium w-32 truncate" title="${topic}">${topic}</span>
+                            <div class="flex-1 h-2 bg-[#F4F1EA] rounded-full overflow-hidden">
+                                <div class="h-full bg-primary/60 rounded-full" style="width: ${Math.min(barWidth, 100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<p class="text-sm text-charcoal-muted">まだデータがありません</p>';
+
+            // Learned Interests - Sources
+            const sources = prefs.learned_interests?.sources || {};
+            const sourceEntries = Object.entries(sources).sort((a, b) => b[1] - a[1]);
+            document.getElementById('interest-sources').innerHTML = sourceEntries.length > 0
+                ? sourceEntries.map(([source, weight]) => {
+                    const pct = Math.round(weight * 100);
+                    const barWidth = Math.max(pct * 5, 10);
+                    return `
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium w-32 truncate" title="${source}">${source}</span>
+                            <div class="flex-1 h-2 bg-[#F4F1EA] rounded-full overflow-hidden">
+                                <div class="h-full bg-charcoal/40 rounded-full" style="width: ${Math.min(barWidth, 100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')
+                : '<p class="text-sm text-charcoal-muted">まだデータがありません</p>';
+
+            // Selection History
+            const history = prefs.selection_history || [];
+            const historyEl = document.getElementById('selection-history');
+            if (history.length > 0) {
+                historyEl.innerHTML = history.slice().reverse().map(entry => {
+                    const selectedCount = entry.selected?.length || 0;
+                    const rejectedCount = entry.rejected?.length || 0;
+                    const total = selectedCount + rejectedCount;
+                    const selectedPct = total > 0 ? Math.round((selectedCount / total) * 100) : 0;
+                    return `
+                        <div class="p-6 border border-paper-border rounded-sm bg-white">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-sm font-bold serif-font">${entry.date}</span>
+                                <div class="flex items-center gap-4 text-xs font-bold">
+                                    <span class="text-primary">${selectedCount} 件選択</span>
+                                    <span class="text-charcoal-muted">${rejectedCount} 件スキップ</span>
+                                </div>
+                            </div>
+                            <div class="w-full h-3 bg-[#F4F1EA] rounded-full overflow-hidden flex">
+                                <div class="h-full bg-primary rounded-l-full" style="width: ${selectedPct}%"></div>
+                                <div class="h-full bg-charcoal/20" style="width: ${100 - selectedPct}%"></div>
+                            </div>
+                            ${entry.selected_topics?.length > 0 ? `
+                                <div class="flex flex-wrap gap-1.5 mt-4">
+                                    ${entry.selected_topics.map(t => `<span class="px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-bold rounded-sm">${t}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                historyEl.innerHTML = `
+                    <div class="p-6 border border-paper-border rounded-sm bg-white text-center">
+                        <p class="text-charcoal-muted">選択履歴がまだありません</p>
+                    </div>
+                `;
+            }
+
+            // Last Updated
+            if (prefs.last_updated) {
+                const d = new Date(prefs.last_updated);
+                document.getElementById('last-updated').textContent = d.toLocaleString('ja-JP');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadInsights);
+    </script>
+</body>
+
+</html>

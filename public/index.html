@@ -84,7 +84,7 @@
                     <a class="text-primary text-sm font-bold leading-normal border-b-2 border-primary"
                         href="#">デイリーフィード</a>
                     <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
-                        href="#">インサイト</a>
+                        href="insights.html">インサイト</a>
                     <a class="text-charcoal-muted text-sm font-medium leading-normal hover:text-primary transition-colors"
                         href="#">ライブラリ</a>
                 </nav>
@@ -111,22 +111,37 @@
                     <div
                         class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b-2 border-charcoal pb-8">
                         <div class="flex flex-col gap-3">
-                            <div class="flex items-center gap-2 text-primary mb-1">
-                                <span class="material-symbols-outlined text-sm">calendar_today</span>
-                                <span class="text-xs font-bold tracking-[0.2em] serif-font"
-                                    id="current-date">2024年10月24日 木曜日</span>
+                            <div class="flex items-center gap-3 text-primary mb-1">
+                                <button id="date-prev" class="flex items-center justify-center size-7 rounded-sm border border-primary/30 hover:bg-primary hover:text-paper-bg transition-colors" title="前日">
+                                    <span class="material-symbols-outlined text-base">chevron_left</span>
+                                </button>
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">calendar_today</span>
+                                    <span class="text-xs font-bold tracking-[0.2em] serif-font"
+                                        id="current-date">読み込み中...</span>
+                                </div>
+                                <button id="date-next" class="flex items-center justify-center size-7 rounded-sm border border-primary/30 hover:bg-primary hover:text-paper-bg transition-colors" title="翌日">
+                                    <span class="material-symbols-outlined text-base">chevron_right</span>
+                                </button>
                             </div>
                             <h1 class="text-charcoal text-5xl font-black leading-tight japanese-tracking">AI 今日のまとめ</h1>
                             <p class="text-charcoal-muted text-lg font-medium max-w-2xl serif-font italic">
                                 あなたにパーソナライズされた最新情報を、AIが要約してお届けします。</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button
+                            <button id="filter-toggle"
                                 class="flex items-center gap-2 px-5 py-2.5 rounded-sm bg-charcoal text-paper-bg text-xs font-bold hover:bg-primary transition-colors uppercase tracking-widest">
                                 <span class="material-symbols-outlined text-lg">tune</span>
                                 フィルター
                             </button>
                         </div>
+                    </div>
+                    <div id="filter-panel" class="hidden flex flex-wrap gap-2 mb-8 -mt-4">
+                        <button class="filter-chip px-3 py-1.5 rounded-sm text-[11px] font-bold border border-paper-border transition-colors bg-charcoal text-paper-bg" data-filter-category="all">すべて</button>
+                        <button class="filter-chip px-3 py-1.5 rounded-sm text-[11px] font-bold border border-paper-border transition-colors bg-[#F4F1EA] text-charcoal-muted" data-filter-category="AI・テクノロジー">テクノロジー</button>
+                        <button class="filter-chip px-3 py-1.5 rounded-sm text-[11px] font-bold border border-paper-border transition-colors bg-[#F4F1EA] text-charcoal-muted" data-filter-category="経済・金融">経済</button>
+                        <button class="filter-chip px-3 py-1.5 rounded-sm text-[11px] font-bold border border-paper-border transition-colors bg-[#F4F1EA] text-charcoal-muted" data-filter-category="政治・政策">政治</button>
+                        <button class="filter-chip px-3 py-1.5 rounded-sm text-[11px] font-bold border border-paper-border transition-colors bg-[#F4F1EA] text-charcoal-muted" data-filter-category="科学">科学</button>
                     </div>
 
                     <!-- News articles will be loaded dynamically -->
@@ -160,13 +175,13 @@
                             <div class="space-y-6">
                                 <div>
                                     <p class="text-paper-bg/60 text-[10px] font-bold uppercase tracking-widest mb-1">
-                                        解析済み記事数</p>
-                                    <p class="text-3xl font-black serif-font">1,284</p>
+                                        本日の記事数</p>
+                                    <p class="text-3xl font-black serif-font" id="stat-articles-count">—</p>
                                 </div>
                                 <div>
                                     <p class="text-paper-bg/60 text-[10px] font-bold uppercase tracking-widest mb-1">
                                         節約された時間</p>
-                                    <p class="text-3xl font-black serif-font">3.5 <span
+                                    <p class="text-3xl font-black serif-font" id="stat-time-saved">— <span
                                             class="text-sm font-medium">時間</span></p>
                                 </div>
                             </div>

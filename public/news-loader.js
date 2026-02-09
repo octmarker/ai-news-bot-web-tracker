@@ -10,6 +10,8 @@ class NewsLoader {
             '政治・政策': { label: '政治', color: 'bg-primary/80' },
             '科学': { label: '科学', color: 'bg-primary/80' }
         };
+        this.currentDate = null; // 表示中の日付
+        this.activeFilters = new Set(); // アクティブなカテゴリフィルター
         this.trackingEnabled = true;
         this.signalQueue = [];
         // 旧キーからの移行
@@ -137,8 +139,54 @@ class NewsLoader {
      * Get the latest candidates file date
      */
     getLatestCandidatesDate() {
-        const now = new Date();
-        return now.toISOString().split('T')[0]; // YYYY-MM-DD
+        if (this.currentDate) return this.currentDate;
+        return this.formatDateLocal(new Date());
+    }
+
+    /**
+     * Format Date to YYYY-MM-DD (local timezone safe)
+     */
+    formatDateLocal(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    /**
+     * Navigate to a different date (offset: -1 for previous, +1 for next)
+     */
+    async navigateDate(offset) {
+        const current = this.currentDate || this.formatDateLocal(new Date());
+        const [y, m, day] = current.split('-').map(Number);
+        const d = new Date(y, m - 1, day + offset);
+        const today = this.formatDateLocal(new Date());
+        const target = this.formatDateLocal(d);
+        if (target > today) return;
+
+        this.currentDate = target;
+        await this.loadAndRender();
+        this.updateDateNav();
+    }
+
+    /**
+     * Update date navigation UI
+     */
+    updateDateNav() {
+        const dateEl = document.getElementById('current-date');
+        if (!dateEl) return;
+        const [y, m, day] = this.currentDate.split('-').map(Number);
+        const d = new Date(y, m - 1, day);
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        dateEl.textContent = d.toLocaleDateString('ja-JP', options);
+
+        const nextBtn = document.getElementById('date-next');
+        if (nextBtn) {
+            const today = this.formatDateLocal(new Date());
+            nextBtn.disabled = this.currentDate >= today;
+            nextBtn.classList.toggle('opacity-30', this.currentDate >= today);
+            nextBtn.classList.toggle('cursor-not-allowed', this.currentDate >= today);
+        }
     }
 
     /**
@@ -222,13 +270,16 @@ class NewsLoader {
                 // Calculate relevance score based on position
                 const relevance = this.calculateRelevance(articleNum);
 
+                // カテゴリヘッダーがない場合、タイトル・説明からカテゴリを推定
+                const inferredCategory = currentCategory !== '科学' ? currentCategory : this.inferCategory(title, description);
+
                 articles.push({
                     number: articleNum,
                     title,
                     source,
                     description,
                     url,
-                    category: currentCategory,
+                    category: inferredCategory,
                     relevance
                 });
             }
@@ -246,6 +297,21 @@ class NewsLoader {
         if (position <= 3) return 95 + (4 - position);
         if (position <= 6) return 90 + (7 - position);
         return Math.max(85, 95 - position);
+    }
+
+    /**
+     * Infer category from title and description keywords
+     */
+    inferCategory(title, description) {
+        const text = `${title} ${description}`.toLowerCase();
+        const aiKeywords = ['ai', '人工知能', 'llm', 'gpt', 'claude', 'gemini', '生成ai', 'openai', 'chatbot', 'ロボット', '自動運転', 'テクノロジー', 'apple', 'google', 'meta', 'microsoft', 'amazon', 'プロンプト', 'ディスプレイ', 'ces', 'データ', 'モデル', 'アルゴリズム', 'マルチモーダル', 'コーディング', 'waymo', 'carplay'];
+        const financeKeywords = ['経済', '金融', '株', '為替', '日銀', '利上げ', '投資', 'gdp', 'インフレ', '金利', '暗号資産', 'ビットコイン', '銀行', '財政', '市場', '証券'];
+        const politicsKeywords = ['政治', '政策', '選挙', '国会', '法案', '規制', '外交', '防衛', '首相', '大統領', '政府', '制裁'];
+
+        if (aiKeywords.some(kw => text.includes(kw))) return 'AI・テクノロジー';
+        if (financeKeywords.some(kw => text.includes(kw))) return '経済・金融';
+        if (politicsKeywords.some(kw => text.includes(kw))) return '政治・政策';
+        return '科学';
     }
 
     /**
@@ -281,8 +347,12 @@ class NewsLoader {
         try {
             console.log('Loading news candidates...');
 
+            if (!this.currentDate) {
+                this.currentDate = this.formatDateLocal(new Date());
+            }
+
             // Fetch markdown
-            const markdown = await this.fetchCandidates();
+            const markdown = await this.fetchCandidates(this.currentDate);
 
             // Parse articles
             const articles = this.parseMarkdown(markdown);
@@ -294,10 +364,14 @@ class NewsLoader {
             // Update date
             this.updateDate(dateElementId);
 
+            // Update sidebar stats
+            this.updateSidebarStats(articles);
+
             return articles;
         } catch (error) {
             console.error('Error loading news:', error);
             this.renderError(containerId);
+            this.updateSidebarStats([]);
             throw error;
         }
     }
@@ -324,7 +398,7 @@ class NewsLoader {
             const dislikedStyle = isDisliked ? 'opacity-30' : '';
 
             return `
-                <article class="group relative transition-opacity duration-300 ${borderClass} ${dislikedStyle}" data-article='${JSON.stringify(article)}' data-article-num="${article.number}">
+                <article class="group relative transition-opacity duration-300 ${borderClass} ${dislikedStyle}" data-article='${JSON.stringify(article)}' data-article-num="${article.number}" data-category="${article.category}">
                     <a class="block article-link" href="article.html?id=${article.number}&date=${date}" data-original-url="${article.url}">
                         <div class="flex flex-col gap-4">
                             <div class="flex items-center justify-between">
@@ -418,6 +492,67 @@ class NewsLoader {
                 </button>
             </div>
         `;
+    }
+
+    /**
+     * Filter articles by category
+     */
+    filterByCategory(category) {
+        if (category === 'all') {
+            this.activeFilters.clear();
+        } else if (this.activeFilters.has(category)) {
+            this.activeFilters.delete(category);
+        } else {
+            this.activeFilters.add(category);
+        }
+
+        const articles = document.querySelectorAll('#news-articles-container article');
+        articles.forEach(el => {
+            const cat = el.dataset.category;
+            if (this.activeFilters.size === 0 || this.activeFilters.has(cat)) {
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+
+        this.updateFilterUI();
+    }
+
+    /**
+     * Update filter chip UI state
+     */
+    updateFilterUI() {
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            const cat = chip.dataset.filterCategory;
+            if (cat === 'all') {
+                const isActive = this.activeFilters.size === 0;
+                chip.classList.toggle('bg-charcoal', isActive);
+                chip.classList.toggle('text-paper-bg', isActive);
+                chip.classList.toggle('bg-[#F4F1EA]', !isActive);
+                chip.classList.toggle('text-charcoal-muted', !isActive);
+            } else {
+                const isActive = this.activeFilters.has(cat);
+                chip.classList.toggle('bg-charcoal', isActive);
+                chip.classList.toggle('text-paper-bg', isActive);
+                chip.classList.toggle('bg-[#F4F1EA]', !isActive);
+                chip.classList.toggle('text-charcoal-muted', !isActive);
+            }
+        });
+    }
+
+    /**
+     * Update sidebar stats with real data
+     */
+    updateSidebarStats(articles) {
+        const countEl = document.getElementById('stat-articles-count');
+        const timeEl = document.getElementById('stat-time-saved');
+        if (countEl) countEl.textContent = articles.length;
+        if (timeEl) {
+            const totalMinutes = articles.reduce((sum, a) => sum + this.calculateReadingTime(a.description), 0);
+            const hours = (totalMinutes / 60).toFixed(1);
+            timeEl.innerHTML = `${hours} <span class="text-sm font-medium">時間</span>`;
+        }
     }
 
     /**
@@ -541,7 +676,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // index.html の場合: 記事一覧を表示
     try {
         await loader.loadAndRender();
+        loader.updateDateNav();
+
+        // 日付ナビゲーション
+        document.getElementById('date-prev')?.addEventListener('click', () => loader.navigateDate(-1));
+        document.getElementById('date-next')?.addEventListener('click', () => loader.navigateDate(1));
+
+        // カテゴリフィルター
+        const filterBtn = document.getElementById('filter-toggle');
+        const filterPanel = document.getElementById('filter-panel');
+        if (filterBtn && filterPanel) {
+            filterBtn.addEventListener('click', () => {
+                filterPanel.classList.toggle('hidden');
+            });
+            filterPanel.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    loader.filterByCategory(chip.dataset.filterCategory);
+                });
+            });
+        }
     } catch (error) {
         console.error('Failed to load news:', error);
+        // エラーでも日付ナビは動くようにする
+        const loader2 = loader;
+        document.getElementById('date-prev')?.addEventListener('click', () => loader2.navigateDate(-1));
+        document.getElementById('date-next')?.addEventListener('click', () => loader2.navigateDate(1));
+        loader.updateDateNav();
     }
 });
