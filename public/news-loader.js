@@ -190,13 +190,13 @@ class NewsLoader {
     }
 
     /**
-     * Fetch candidates markdown file
+     * Fetch candidates JSON file
      */
     async fetchCandidates(date = null) {
         const targetDate = date || this.getLatestCandidatesDate();
 
         // GitHub APIから直接取得（ローカルfile://でも動作する）
-        const ghUrl = `https://api.github.com/repos/octmarker/ai-news-bot/contents/news/${targetDate}-candidates.md`;
+        const ghUrl = `https://api.github.com/repos/octmarker/ai-news-bot/contents/news/${targetDate}-candidates.json`;
 
         try {
             const response = await fetch(ghUrl);
@@ -207,7 +207,8 @@ class NewsLoader {
             const binary = atob(data.content);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            return new TextDecoder('utf-8').decode(bytes);
+            const jsonStr = new TextDecoder('utf-8').decode(bytes);
+            return JSON.parse(jsonStr);
         } catch (error) {
             console.error('Error fetching candidates:', error);
             throw error;
@@ -215,79 +216,20 @@ class NewsLoader {
     }
 
     /**
-     * Parse markdown content to extract articles
+     * Parse JSON candidates to article objects
      */
-    parseMarkdown(markdown) {
-        const articles = [];
-        let currentCategory = '科学';
-
-        // Split by lines
-        const lines = markdown.split('\n');
-
-        let i = 0;
-        while (i < lines.length) {
-            const line = lines[i].trim();
-
-            // Check for category header (## カテゴリ名)
-            if (line.startsWith('## ') && !line.includes('📰')) {
-                const categoryText = line.substring(3).trim();
-                // Map to our category system
-                for (const [key, value] of Object.entries(this.categoryMap)) {
-                    if (categoryText.includes(key.split('・')[0])) {
-                        currentCategory = key;
-                        break;
-                    }
-                }
-                i++;
-                continue;
-            }
-
-            // Check for article number (e.g., "1. Title" or "10. Title")
-            const articleMatch = line.match(/^(\d+)\.\s+(.+)$/);
-            if (articleMatch) {
-                const articleNum = parseInt(articleMatch[1]);
-                const title = articleMatch[2].trim();
-
-                // Next line should have source and description
-                i++;
-                const metaLine = lines[i]?.trim() || '';
-                const sourceMatch = metaLine.match(/📰\s+([^|]+)\s*\|\s*💡\s+(.+)/);
-
-                let source = 'ニュースソース';
-                let description = '';
-
-                if (sourceMatch) {
-                    source = sourceMatch[1].trim();
-                    description = sourceMatch[2].trim();
-                }
-
-                // Next line should have URL
-                i++;
-                const urlLine = lines[i]?.trim() || '';
-                const urlMatch = urlLine.match(/URL:\s*\[?([^\]]+)\]?/);
-                const url = urlMatch ? urlMatch[1].trim() : '#';
-
-                // Calculate relevance score based on position
-                const relevance = this.calculateRelevance(articleNum);
-
-                // カテゴリヘッダーがない場合、タイトル・説明からカテゴリを推定
-                const inferredCategory = currentCategory !== '科学' ? currentCategory : this.inferCategory(title, description);
-
-                articles.push({
-                    number: articleNum,
-                    title,
-                    source,
-                    description,
-                    url,
-                    category: inferredCategory,
-                    relevance
-                });
-            }
-
-            i++;
-        }
-
-        return articles;
+    parseArticles(candidatesData) {
+        const articles = candidatesData.articles || [];
+        return articles.map(article => ({
+            number: article.number,
+            title: article.title,
+            source: article.source,
+            description: article.description,
+            url: article.url,
+            category: article.category || '科学',
+            relevance: this.calculateRelevance(article.number),
+            summary: article.summary || null
+        }));
     }
 
     /**
@@ -351,11 +293,11 @@ class NewsLoader {
                 this.currentDate = this.formatDateLocal(new Date());
             }
 
-            // Fetch markdown
-            const markdown = await this.fetchCandidates(this.currentDate);
+            // Fetch JSON candidates
+            const candidatesData = await this.fetchCandidates(this.currentDate);
 
             // Parse articles
-            const articles = this.parseMarkdown(markdown);
+            const articles = this.parseArticles(candidatesData);
             console.log(`Parsed ${articles.length} articles`);
 
             // Render articles
@@ -579,8 +521,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const articleId = parseInt(params.get('id'));
             const date = params.get('date') || loader.getLatestCandidatesDate();
 
-            const markdown = await loader.fetchCandidates(date);
-            const articles = loader.parseMarkdown(markdown);
+            const candidatesData = await loader.fetchCandidates(date);
+            const articles = loader.parseArticles(candidatesData);
             const article = articles.find(a => a.number === articleId);
 
             if (!article) {
@@ -610,61 +552,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (originalLink) originalLink.href = article.url;
             if (bottomActions) bottomActions.classList.remove('hidden');
 
-            // AI要約と元記事の内容を非同期で取得
+            // AI要約を表示（JSONに含まれている要約を直接表示）
             const summarySection = document.getElementById('ai-summary-section');
-            const originalSection = document.getElementById('original-content-section');
-            if (summarySection) {
+            if (summarySection && article.summary) {
                 summarySection.classList.remove('hidden');
-
-                try {
-                    const apiBase = window.location.protocol === 'file:' ? 'https://ai-news-bot-web-tracker.vercel.app' : '';
-                    const resp = await fetch(`${apiBase}/api/summarize`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ url: article.url, title: article.title, date, article_id: articleId })
-                    });
-                    const data = await resp.json();
-
-                    if (data.success && data.ai_summary) {
-                        const s = data.ai_summary;
-                        document.getElementById('ai-summary-content').innerHTML = `
-                            <p class="text-primary font-bold text-lg mb-3">${s.headline || ''}</p>
-                            <ul class="space-y-2 mb-4">
-                                ${(s.key_points || []).map(p => `
-                                    <li class="flex items-start gap-2">
-                                        <span class="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
-                                        <span class="text-charcoal">${p}</span>
-                                    </li>
-                                `).join('')}
-                            </ul>
-                            <p class="text-charcoal leading-relaxed mb-4">${s.detailed_summary || ''}</p>
-                            ${s.why_it_matters ? `
-                                <div class="bg-white rounded p-4 border border-primary/10">
-                                    <p class="text-sm font-bold text-primary mb-1">なぜ重要か</p>
-                                    <p class="text-charcoal text-sm">${s.why_it_matters}</p>
-                                </div>
-                            ` : ''}
-                        `;
-                    } else {
-                        document.getElementById('ai-summary-content').innerHTML =
-                            '<p class="text-charcoal-muted text-sm">要約の生成に失敗しました</p>';
-                    }
-
-                    // 元記事の内容を表示
-                    if (data.article_text && originalSection) {
-                        originalSection.classList.remove('hidden');
-                        const paragraphs = data.article_text
-                            .split(/(?<=[。．！？\n])\s*/)
-                            .filter(p => p.trim().length > 15)
-                            .map(p => `<p class="mb-4 indent-4">${p.trim()}</p>`)
-                            .join('');
-                        document.getElementById('original-content').innerHTML = paragraphs || `<p>${data.article_text}</p>`;
-                    }
-                } catch (err) {
-                    console.error('Summary API error:', err);
-                    document.getElementById('ai-summary-content').innerHTML =
-                        '<p class="text-charcoal-muted text-sm">要約の取得に失敗しました</p>';
-                }
+                const s = article.summary;
+                document.getElementById('ai-summary-content').innerHTML = `
+                    <p class="text-primary font-bold text-lg mb-3">${s.headline || ''}</p>
+                    <ul class="space-y-2 mb-4">
+                        ${(s.key_points || []).map(p => `
+                            <li class="flex items-start gap-2">
+                                <span class="material-symbols-outlined text-primary text-base mt-0.5">check_circle</span>
+                                <span class="text-charcoal">${p}</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <p class="text-charcoal leading-relaxed mb-4">${s.detailed_summary || ''}</p>
+                    ${s.why_it_matters ? `
+                        <div class="bg-white rounded p-4 border border-primary/10">
+                            <p class="text-sm font-bold text-primary mb-1">なぜ重要か</p>
+                            <p class="text-charcoal text-sm">${s.why_it_matters}</p>
+                        </div>
+                    ` : ''}
+                `;
             }
         } catch (error) {
             console.error('Failed to load article:', error);
