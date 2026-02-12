@@ -354,7 +354,7 @@ class NewsLoader {
                             <div class="flex gap-6">
                                 <div class="w-0.5 bg-primary/30 rounded-full"></div>
                                 <p class="text-charcoal-muted text-base leading-relaxed line-clamp-3 font-medium">
-                                    ${article.description}
+                                    ${article.summary ? article.summary.headline : article.description}
                                 </p>
                             </div>
                             <div class="flex items-center justify-between mt-2 pt-4 border-t border-paper-border">
