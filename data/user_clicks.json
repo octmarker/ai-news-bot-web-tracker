@@ -497,6 +497,15 @@
       "category": "AI・テクノロジー",
       "source": "Web Search",
       "clicked_at": "2026-03-05T01:09:21.166Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 7,
+      "title": "AIエージェントがリポジトリIDを捏造、Vercelへ誤デプロイ",
+      "url": "https://awesomeagents.ai/news/openclaw-opus-hallucinated-repo-id-vercel-deploy/",
+      "category": "AI・テクノロジー",
+      "source": "awesomeagents.ai",
+      "clicked_at": "2026-03-05T01:11:08.500Z"
     }
   ],
   "created_at": "2026-02-08T00:00:00.000Z",
