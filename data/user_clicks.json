@@ -740,6 +740,15 @@
       "category": "AI・テクノロジー",
       "source": "betakit.com",
       "clicked_at": "2026-03-12T02:10:19.074Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 10,
+      "title": "Graphwise、低コードAIエンジン「GraphRAG」を発表",
+      "url": "https://www.kmworld.com/Articles/News/News/Graphwise-introduces-new-GraphRAG-solution-that-provides-context-and-common-sense-to-AI-173509.aspx",
+      "category": "AI・テクノロジー",
+      "source": "kmworld.com",
+      "clicked_at": "2026-03-12T02:15:24.479Z"
     }
   ],
   "created_at": "2026-02-08T00:00:00.000Z",
