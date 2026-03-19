@@ -17,3 +17,6 @@ yarn-error.log
 # IDE
 .vscode/
 .idea/
+.env*.local
+
+.env.keys

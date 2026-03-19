@@ -321,11 +321,16 @@
                 }).join('')
                 : '<p class="text-sm text-charcoal-muted">まだデータがありません</p>';
 
-            // Selection History
+            // Selection History (直近7日分のみ表示)
             const history = prefs.selection_history || [];
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const recentHistory = history.filter(entry => {
+                return new Date(entry.date) >= sevenDaysAgo;
+            });
             const historyEl = document.getElementById('selection-history');
-            if (history.length > 0) {
-                historyEl.innerHTML = history.slice().reverse().map(entry => {
+            if (recentHistory.length > 0) {
+                historyEl.innerHTML = recentHistory.slice().reverse().map(entry => {
                     const selectedCount = entry.selected?.length || 0;
                     const rejectedCount = entry.rejected?.length || 0;
                     const total = selectedCount + rejectedCount;

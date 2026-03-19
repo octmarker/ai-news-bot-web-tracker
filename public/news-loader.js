@@ -5,10 +5,10 @@
 class NewsLoader {
     constructor() {
         this.categoryMap = {
-            'AI・テクノロジー': { label: 'テクノロジー', color: 'bg-primary' },
-            '経済・金融': { label: '経済', color: 'bg-charcoal' },
-            '政治・政策': { label: '政治', color: 'bg-primary/80' },
-            '科学': { label: '科学', color: 'bg-primary/80' }
+            'AI・テクノロジー': { label: 'TECHNOLOGY', color: 'text-[#FF6B35]', gradient: 'card-img-tech' },
+            '経済・金融': { label: 'BUSINESS', color: 'text-[#4CA1AF]', gradient: 'card-img-finance' },
+            '政治・政策': { label: 'POLITICS', color: 'text-[#764ba2]', gradient: 'card-img-politics' },
+            '科学': { label: 'SCIENCE', color: 'text-[#11998e]', gradient: 'card-img-science' }
         };
         this.currentDate = null; // 表示中の日付
         this.activeFilters = new Set(); // アクティブなカテゴリフィルター
@@ -260,7 +260,7 @@ class NewsLoader {
      * Get category badge info
      */
     getCategoryInfo(category) {
-        return this.categoryMap[category] || { label: '科学', color: 'bg-primary/80' };
+        return this.categoryMap[category] || { label: 'SCIENCE', color: 'text-[#11998e]', gradient: 'card-img-default' };
     }
 
     /**
@@ -332,48 +332,28 @@ class NewsLoader {
 
         container.innerHTML = articles.map((article, index) => {
             const categoryInfo = this.getCategoryInfo(article.category);
-            const readingTime = this.calculateReadingTime(article.description);
-            const timeAgo = this.formatTimeAgo(article.number);
-            const borderClass = index > 0 ? 'pt-10 border-t border-paper-border' : '';
             const dislikeKey = `${date}_${article.number}`;
             const isDisliked = this.dislikedKeys.has(dislikeKey);
             const dislikedStyle = isDisliked ? 'opacity-30' : '';
+            const description = article.summary ? article.summary.headline : article.description;
+            // Truncate description to ~80 chars for card display
+            const shortDesc = description.length > 100 ? description.substring(0, 100) + '…' : description;
+
+            const imgSeed = `${date}-${article.number}`;
 
             return `
-                <article class="group relative transition-opacity duration-300 ${borderClass} ${dislikedStyle}" data-article='${JSON.stringify(article)}' data-article-num="${article.number}" data-category="${article.category}">
+                <article class="article-card group relative ${dislikedStyle}" data-article='${JSON.stringify(article)}' data-article-num="${article.number}" data-category="${article.category}">
                     <a class="block article-link" href="article.html?id=${article.number}&date=${date}" data-original-url="${article.url}">
-                        <div class="flex flex-col gap-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="px-2 py-0.5 rounded-sm text-[10px] font-bold ${categoryInfo.color} text-paper-bg tracking-widest uppercase">${categoryInfo.label}</span>
-                                    <span class="text-charcoal-muted text-xs font-bold serif-font">${article.source} • ${timeAgo}</span>
-                                </div>
-                                <span class="material-symbols-outlined text-paper-border group-hover:text-primary transition-colors">north_east</span>
-                            </div>
-                            <h3 class="text-charcoal text-2xl font-bold leading-tight group-hover:text-primary transition-colors japanese-tracking">${article.title}</h3>
-                            <div class="flex gap-6">
-                                <div class="w-0.5 bg-primary/30 rounded-full"></div>
-                                <p class="text-charcoal-muted text-base leading-relaxed line-clamp-3 font-medium">
-                                    ${article.summary ? article.summary.headline : article.description}
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-between mt-2 pt-4 border-t border-paper-border">
-                                <div class="flex items-center gap-6">
-                                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-charcoal-muted uppercase tracking-wider">
-                                        <span class="material-symbols-outlined text-base">schedule</span>
-                                        読了時間：${readingTime}分
-                                    </div>
-                                    <div class="flex items-center gap-1.5 text-[11px] font-bold text-primary uppercase tracking-wider">
-                                        <span class="material-symbols-outlined text-base">psychology</span>
-                                        関連度 ${article.relevance}%
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="card-img rounded-sm mb-4" style="background-image: url('https://picsum.photos/seed/${imgSeed}/600/450')"></div>
+                        <div class="flex flex-col gap-2">
+                            <span class="text-[11px] font-bold ${categoryInfo.color} tracking-[0.15em] uppercase">${categoryInfo.label}</span>
+                            <h3 class="text-charcoal text-lg font-bold leading-snug">${article.title}</h3>
+                            <p class="text-charcoal-muted text-sm leading-relaxed line-clamp-3">${shortDesc}</p>
+                            <p class="text-charcoal-muted/60 text-xs font-medium mt-1 uppercase tracking-wider">BY ${article.source}</p>
                         </div>
                     </a>
-                    <button class="dislike-btn absolute bottom-4 right-0 flex items-center gap-1 text-[11px] font-bold tracking-wider transition-colors ${isDisliked ? 'text-red-400' : 'text-charcoal-muted/40 hover:text-red-400'}" data-article-num="${article.number}">
+                    <button class="dislike-btn absolute top-2 right-2 flex items-center justify-center size-7 rounded-full bg-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all ${isDisliked ? 'text-red-400 !opacity-100' : 'text-charcoal-muted/40 hover:text-red-400'}" data-article-num="${article.number}" title="${isDisliked ? '取消' : '興味なし'}">
                         <span class="material-symbols-outlined text-base">block</span>
-                        <span class="dislike-label">${isDisliked ? '取消' : '興味なし'}</span>
                     </button>
                 </article>
             `;
@@ -386,7 +366,6 @@ class NewsLoader {
                 const href = link.href;
                 const article = JSON.parse(link.closest('article').dataset.article);
                 this.trackClick(article);
-                // fetchで送信完了を待ってから遷移（タイムアウト2秒）
                 this.flushSignalsAsync().finally(() => {
                     window.location.href = href;
                 });
@@ -405,13 +384,13 @@ class NewsLoader {
                 if (isNowDisliked) {
                     articleEl.classList.add('opacity-30');
                     btn.classList.remove('text-charcoal-muted/40', 'hover:text-red-400');
-                    btn.classList.add('text-red-400');
-                    btn.querySelector('.dislike-label').textContent = '取消';
+                    btn.classList.add('text-red-400', '!opacity-100');
+                    btn.title = '取消';
                 } else {
                     articleEl.classList.remove('opacity-30');
                     btn.classList.add('text-charcoal-muted/40', 'hover:text-red-400');
-                    btn.classList.remove('text-red-400');
-                    btn.querySelector('.dislike-label').textContent = '興味なし';
+                    btn.classList.remove('text-red-400', '!opacity-100');
+                    btn.title = '興味なし';
                 }
             });
         });
@@ -467,19 +446,13 @@ class NewsLoader {
     updateFilterUI() {
         document.querySelectorAll('.filter-chip').forEach(chip => {
             const cat = chip.dataset.filterCategory;
-            if (cat === 'all') {
-                const isActive = this.activeFilters.size === 0;
-                chip.classList.toggle('bg-charcoal', isActive);
-                chip.classList.toggle('text-paper-bg', isActive);
-                chip.classList.toggle('bg-[#F4F1EA]', !isActive);
-                chip.classList.toggle('text-charcoal-muted', !isActive);
-            } else {
-                const isActive = this.activeFilters.has(cat);
-                chip.classList.toggle('bg-charcoal', isActive);
-                chip.classList.toggle('text-paper-bg', isActive);
-                chip.classList.toggle('bg-[#F4F1EA]', !isActive);
-                chip.classList.toggle('text-charcoal-muted', !isActive);
-            }
+            const isActive = cat === 'all' ? this.activeFilters.size === 0 : this.activeFilters.has(cat);
+            chip.classList.toggle('bg-charcoal', isActive);
+            chip.classList.toggle('text-white', isActive);
+            chip.classList.toggle('border-charcoal', isActive);
+            chip.classList.toggle('bg-white', !isActive);
+            chip.classList.toggle('text-charcoal-muted', !isActive);
+            chip.classList.toggle('border-border-light', !isActive);
         });
     }
 
@@ -487,14 +460,7 @@ class NewsLoader {
      * Update sidebar stats with real data
      */
     updateSidebarStats(articles) {
-        const countEl = document.getElementById('stat-articles-count');
-        const timeEl = document.getElementById('stat-time-saved');
-        if (countEl) countEl.textContent = articles.length;
-        if (timeEl) {
-            const totalMinutes = articles.reduce((sum, a) => sum + this.calculateReadingTime(a.description), 0);
-            const hours = (totalMinutes / 60).toFixed(1);
-            timeEl.innerHTML = `${hours} <span class="text-sm font-medium">時間</span>`;
-        }
+        // Sidebar removed in WIRED-style redesign - no-op
     }
 
     /**
@@ -541,9 +507,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="text-sm text-charcoal-muted">${article.source} • ${date}</span>
                     <span class="text-sm text-charcoal-muted">読了時間：${readingTime}分</span>
                 </div>
+                ${article.summary?.headline ? `
+                <div class="flex gap-3 items-start">
+                    <div class="w-0.5 bg-primary/30 rounded-full self-stretch"></div>
+                    <p class="text-charcoal-muted text-base leading-relaxed font-medium">${article.summary.headline}</p>
+                </div>
+                ` : `
                 <div class="prose prose-lg max-w-none">
                     <p class="text-charcoal leading-relaxed text-lg">${article.description}</p>
                 </div>
+                `}
             `;
 
             // ボトムアクションに元記事URLを設定して表示

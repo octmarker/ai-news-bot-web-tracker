@@ -48,10 +48,14 @@ export default async function handler(req, res) {
             ...currentPrefs,
             search_config: analysis,
             learning_phase: analysis.learning_phase,
+            learned_interests: analysis.learned_interests,
+            selection_history: analysis.selection_history,
             last_updated: new Date().toISOString(),
         };
         delete updatedPrefs._sha;
         delete updatedPrefs.search_config.learning_phase;
+        delete updatedPrefs.search_config.learned_interests;
+        delete updatedPrefs.search_config.selection_history;
 
         await saveToGitHub(
             GITHUB_OWNER(), BOT_REPO(), 'user_preferences.json',
@@ -106,6 +110,9 @@ ${JSON.stringify(clickSummary, null, 2)}
 ## 現在のプリファレンス設定
 ${JSON.stringify(currentConfig, null, 2)}
 
+## 現在の学習済み興味
+${JSON.stringify(currentPrefs.learned_interests || {}, null, 2)}
+
 ## 分析の指針
 - **positive**: ユーザーが興味を持ってクリックした記事
 - **negative**: ユーザーが「興味なし」と明示的に拒否した記事
@@ -127,7 +134,24 @@ ${JSON.stringify(currentConfig, null, 2)}
     "other": 0.0-1.0
   },
   "serendipity_ratio": 0.0-0.2,
-  "learning_phase": 0-3
+  "learning_phase": 0-3,
+  "learned_interests": {
+    "topics": {
+      "トピック名": 0.0-1.0
+    },
+    "sources": {
+      "ソース名": 0.0-1.0
+    }
+  },
+  "selection_history": [
+    {
+      "date": "YYYY-MM-DD",
+      "selected": [記事番号の配列],
+      "rejected": [記事番号の配列],
+      "selected_topics": ["トピック名"],
+      "selected_sources": ["ソース名"]
+    }
+  ]
 }
 
 ## learning_phase の判定基準
@@ -136,10 +160,27 @@ ${JSON.stringify(currentConfig, null, 2)}
 - 2: 15-30件（中期学習、全フィールドを設定）
 - 3: 30件以上（成熟、セレンディピティ枠も有効化）
 
+## learned_interests の計算ルール
+- 記事タイトルから主要なトピックを抽出（例: "Claude", "Gemini", "日銀", "利上げ"など）
+- positiveクリックされたトピック/ソース: スコア +0.1（最大1.0）
+- negativeクリックされたトピック/ソース: スコア -0.05（最小0.0）
+- 既存のスコアを参考にしつつ、新しいクリックを反映
+- 重要度の高いトピック（複数回クリック）ほど高スコア
+
+## selection_history の生成ルール
+- クリック履歴を日付ごとにグループ化
+- positive クリック → selected 配列に記事番号を追加
+- negative クリック → rejected 配列に記事番号を追加
+- selected_topics: 選択された記事から抽出したトピック
+- selected_sources: 選択された記事のソース名
+- 過去30日分のみ保持（古いものは削除）
+
 ## 注意
 - learning_phase 0の場合、boosted_keywords と suppressed_keywords は空配列にする
 - category_distribution の値の合計は1.0になるようにする
-- serendipity_ratio は learning_phase 3 の場合のみ 0.1-0.2、それ以外は 0.0`;
+- serendipity_ratio は learning_phase 3 の場合のみ 0.1-0.2、それ以外は 0.0
+- learned_interests のスコアは0.0〜1.0の範囲に正規化する
+- selection_history は日付の新しい順にソートする`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
@@ -156,6 +197,22 @@ ${JSON.stringify(currentConfig, null, 2)}
     if (typeof analysis.category_distribution !== 'object') analysis.category_distribution = {};
     if (typeof analysis.serendipity_ratio !== 'number') analysis.serendipity_ratio = 0.0;
     if (typeof analysis.learning_phase !== 'number') analysis.learning_phase = 0;
+
+    // learned_interests のバリデーション
+    if (!analysis.learned_interests || typeof analysis.learned_interests !== 'object') {
+        analysis.learned_interests = { topics: {}, sources: {} };
+    }
+    if (!analysis.learned_interests.topics || typeof analysis.learned_interests.topics !== 'object') {
+        analysis.learned_interests.topics = {};
+    }
+    if (!analysis.learned_interests.sources || typeof analysis.learned_interests.sources !== 'object') {
+        analysis.learned_interests.sources = {};
+    }
+
+    // selection_history のバリデーション
+    if (!Array.isArray(analysis.selection_history)) {
+        analysis.selection_history = [];
+    }
 
     return analysis;
 }
