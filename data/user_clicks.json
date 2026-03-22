@@ -947,6 +947,15 @@
       "category": "AI・テクノロジー",
       "source": "imd.org",
       "clicked_at": "2026-03-17T02:56:41.337Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 4,
+      "title": "OpenAI、PythonツールのAstral（uv・Ruff）を買収しCodexに統合",
+      "url": "https://arstechnica.com/ai/2026/03/openai-is-acquiring-open-source-python-tool-maker-astral/",
+      "category": "AI・テクノロジー",
+      "source": "Ars Technica",
+      "clicked_at": "2026-03-22T02:01:07.175Z"
     }
   ],
   "created_at": "2026-02-08T00:00:00.000Z",
