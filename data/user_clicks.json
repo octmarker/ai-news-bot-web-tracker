@@ -1154,6 +1154,15 @@
       "category": "経済・金融",
       "source": "CNBC",
       "clicked_at": "2026-03-30T00:57:49.955Z"
+    },
+    {
+      "type": "positive",
+      "article_number": 8,
+      "title": "OpenAI、Python開発ツール企業Astralを買収——Codexをフルスタック開発基盤へ進化",
+      "url": "https://openai.com/index/openai-acquires-astral/",
+      "category": "AI・テクノロジー",
+      "source": "OpenAI / InfoWorld",
+      "clicked_at": "2026-03-30T00:58:51.069Z"
     }
   ],
   "created_at": "2026-02-08T00:00:00.000Z",
